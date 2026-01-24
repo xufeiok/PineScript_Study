@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <title>Pine Script 学习系统</title>
+    <!-- Highlight.js Theme (Atom One Dark) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <!-- 中文说明：全局样式文件，包含主题色、排版与响应式布局 -->
+    <link rel="stylesheet" href="./styles.css?v=22" />
+  </head>
+  <body>
+    <!-- 中文说明：顶栏，展示品牌与全局导航入口 -->
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-mark">PS</span>
+        <h1>Pine Script 学习系统</h1>
+      </div>
+      <nav class="top-actions">
+        <!-- <button id="mobileBtn" class="ghost">📱 手机访问</button> -->
+        <button id="toggleThemeBtn" class="ghost">切换主题</button>
+        <button id="resetProgressBtn" class="ghost">重置进度</button>
+      </nav>
+    </header>
+
+    <!-- Modal for Mobile Access -->
+    <div id="mobileModal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>手机扫码访问</h3>
+          <button id="closeModalBtn" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body" style="text-align: center;">
+          <p>请确保手机与电脑连接同一 Wi-Fi</p>
+          <img id="qrImage" src="" alt="QR Code" style="margin: 20px auto; display: block; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+          <p class="code-url" style="font-family: monospace; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 4px;">http://192.168.10.101:9527</p>
+          <p class="muted" style="font-size: 12px; margin-top: 12px;">注：如果 IP 变动，请在电脑终端输入 ipconfig 查看</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 中文说明：主区域布局，左侧为课程目录，右侧为内容区 -->
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h2>学习路径</h2>
+          <p class="muted">从基础到策略，层层递进</p>
+        </div>
+        <ul id="lessonList" class="lesson-list"></ul>
+      </aside>
+
+      <main class="content-area">
+        <!-- 中文说明：课程标题与进度条 -->
+        <section class="lesson-top">
+          <div>
+            <h2 id="lessonTitle">选择左侧课程开始学习</h2>
+            <p id="lessonSubtitle" class="muted"></p>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-bar">
+              <div id="progressFill" class="progress-fill" style="width:0%"></div>
+            </div>
+            <span id="progressText" class="progress-text">0% 完成</span>
+          </div>
+        </section>
+
+        <!-- 中文说明：三栏标签切换：概念讲解 / 代码对照 / 练习测验 -->
+        <section class="tabs">
+          <button class="tab active" data-tab="concept">概念讲解</button>
+          <button class="tab" data-tab="code">代码对照</button>
+          <button class="tab" data-tab="quiz">练习测验</button>
+        </section>
+
+        <!-- 中文说明：可滚动内容区，避免底部内容被裁切 -->
+        <div class="panels">
+          <!-- 中文说明：概念讲解面板 -->
+          <section id="panelConcept" class="panel">
+            <article id="conceptBody" class="prose"></article>
+            <div class="note">
+              <strong>总结</strong>
+              <ul id="conceptSummary"></ul>
+            </div>
+          </section>
+
+          <!-- 中文说明：代码对照面板（Pine Script vs Python） -->
+          <section id="panelCode" class="panel hidden">
+            <div class="code-compare">
+              <div class="code-block">
+                <div class="code-header">
+                  <span class="lang">Pine Script</span>
+                  <button id="copyPineBtn" class="copy-btn">复制</button>
+                </div>
+                <pre id="pineCode" class="code"></pre>
+              </div>
+              <div class="code-block">
+                <div class="code-header">
+                  <span class="lang">Python</span>
+                  <button id="copyPyBtn" class="copy-btn">复制</button>
+                </div>
+                <pre id="pythonCode" class="code"></pre>
+              </div>
+            </div>
+          </section>
+
+          <!-- 中文说明：练习测验面板（主动回忆 + 即时反馈） -->
+          <section id="panelQuiz" class="panel hidden">
+            <div id="quizContainer" class="quiz-card">
+              <div class="quiz-header">
+                <h3 id="quizTitle">测验</h3>
+                <span id="quizProgress" class="muted">0 / 0</span>
+              </div>
+              <div id="quizBody" class="quiz-body"></div>
+              <div class="quiz-actions">
+                <button id="submitQuizBtn" class="primary">提交答案</button>
+                <button id="nextQuizBtn" class="ghost" disabled>下一题</button>
+              </div>
+              <div id="quizFeedback" class="feedback"></div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <!-- 中文说明：页脚，展示简要帮助与版权 -->
+    <footer class="app-footer">
+      <p>© 2026 Pine Script 学习系统 · 针对量化交易设计 · 对照 Python 学习</p>
+      <p class="muted">电脑端专用 · 离线可用 · 支持间隔重复与主动回忆</p>
+    </footer>
+
+    <!-- 中文说明：主脚本文件，负责数据加载、交互逻辑与进度存储 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="./app.js?v=11"></script>
+  </body>
+  </html>
