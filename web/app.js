@@ -103,6 +103,25 @@
       }
     });
 
+    // Mobile Sidebar Logic
+    const menuBtn = document.getElementById("menuBtn");
+    const sidebar = document.querySelector(".sidebar");
+    const overlay = document.getElementById("sidebarOverlay");
+
+    if (menuBtn) {
+      menuBtn.addEventListener("click", () => {
+        sidebar.classList.toggle("active");
+        overlay.classList.toggle("active");
+      });
+    }
+
+    if (overlay) {
+      overlay.addEventListener("click", () => {
+        sidebar.classList.remove("active");
+        overlay.classList.remove("active");
+      });
+    }
+
     // Mobile Modal Logic REMOVED
     /*
     const mobileBtn = document.getElementById("mobileBtn");
@@ -324,13 +343,45 @@
   }
 
   // -------------------------------
+  // 简单解密工具 (XOR)
+  // -------------------------------
+  function xorDecrypt(encryptedBase64, key) {
+    if (!encryptedBase64) return "";
+    try {
+      const encryptedBytes = Uint8Array.from(atob(encryptedBase64), c => c.charCodeAt(0));
+      const keyBytes = new TextEncoder().encode(key);
+      const decryptedBytes = new Uint8Array(encryptedBytes.length);
+      
+      for (let i = 0; i < encryptedBytes.length; i++) {
+        decryptedBytes[i] = encryptedBytes[i] ^ keyBytes[i % keyBytes.length];
+      }
+      return new TextDecoder().decode(decryptedBytes);
+    } catch (e) {
+      console.error("Decryption failed:", e);
+      return "[内容解析错误]";
+    }
+  }
+
+  // -------------------------------
   // 概念讲解与总结
   // -------------------------------
   function renderConcept(lsn) {
     const body = document.getElementById("conceptBody");
     body.classList.toggle("is-reference", !!(lsn.category && lsn.category.includes("参考资料")));
-    const main = lsn.concept || "";
-    const extra = lsn.concept_extra || "";
+    
+    // Decrypt content if needed
+    let main = lsn.concept || "";
+    let extra = lsn.concept_extra || "";
+    
+    if (lsn.isEncrypted) {
+        // Retrieve key from storage (stored as 'manual_code_PINEGOOD888')
+        const stored = localStorage.getItem("ps_vip_user") || "";
+        const userKey = stored.replace("manual_code_", "").trim();
+        
+        if (main.startsWith("ENC:")) main = xorDecrypt(main.substring(4), userKey);
+        if (extra.startsWith("ENC:")) extra = xorDecrypt(extra.substring(4), userKey);
+    }
+    
     body.innerHTML = main || extra ? `${main}${extra}` : "暂无内容";
     const sum = document.getElementById("conceptSummary");
     sum.innerHTML = "";
@@ -349,14 +400,23 @@
     const pineEl = document.getElementById("pineCode");
     const pyEl = document.getElementById("pythonCode");
     
-    // 强制使用 innerHTML 并将换行符替换为 <br> 以防万一
-    // 但更好的方式是保留 textContent 并让 CSS 处理
+    let pCode = lsn.pine_code || "";
+    let pyCode = lsn.python_code || "";
+    
+    if (lsn.isEncrypted) {
+        const stored = localStorage.getItem("ps_vip_user") || "";
+        const userKey = stored.replace("manual_code_", "").trim();
+        
+        if (pCode.startsWith("ENC:")) pCode = xorDecrypt(pCode.substring(4), userKey);
+        if (pyCode.startsWith("ENC:")) pyCode = xorDecrypt(pyCode.substring(4), userKey);
+    }
+    
     // 调试：打印一下看看内容
-    console.log("Rendering Pine Code:", lsn.pine_code);
+    // console.log("Rendering Pine Code:", pCode);
     
     // 尝试方案 A: 纯文本注入，依赖 CSS pre-wrap
-    pineEl.textContent = lsn.pine_code || "";
-    pyEl.textContent = lsn.python_code || "";
+    pineEl.textContent = pCode;
+    pyEl.textContent = pyCode;
     
     // 重置 class
     pineEl.className = "language-javascript";
